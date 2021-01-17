@@ -8,6 +8,7 @@ output:
     toc: yes
     toc_float: yes
     fig_retina: null
+    fig_caption: yes
 classoption: a4paper
 geometry: margin=3cm
 fontsize: 12pt
@@ -31,29 +32,179 @@ require(pander)
 library(OncoSimulR)
 ```
 
-Vignettes are long form documentation commonly included in packages. Because they are part of the distribution of the package, they need to be as compact as possible. The `html_vignette` output type provides a custom style sheet (and tweaks some options) to ensure that the resulting html is as small as possible. The `html_vignette` format:
+# Introduction
+Understating the factors involved in tumor progression can lead to highlight
+gene interactions or key mutations that would be valuable for various 
+therapeutic purposes.  
 
-- Never uses retina figures
-- Has a smaller default figure size
-- Uses a custom CSS stylesheet instead of the default Twitter Bootstrap style
+One of the tools used to do so are cancer progression models ( _CPMs_ ), which
+allow us to identify the constrains or dependencies in the order of accumulation
+of mutations that take place during tumor development. They return directed
+acyclic graphs ( _DAGs_ ) in which the vertices or nodes are the potentially
+mutated genes, and their restriction/relationships are the edges of the graph;
+thus representing the possible genotypes that can occur in that tumor.  
 
-## Vignette Info
+Another convenient approach to understand cancer progression are fitness landscapes,
+which specify the observed genotypes and their fitness delimiting paths from 
+the wild-type to further stages as it accumulates mutations. 
 
-Note the various macros within the `vignette` section of the metadata block above. These are required in order to instruct R how to build the vignette. Note that you should change the `title` field and the `\VignetteIndexEntry` to match the title of your vignette.
+Although fitness landscapes are highly useful, obtaining them isn't as easy as
+delimiting _DAGs_ from a _CPM_. Both methods aren't interchangeable as _DAGs_ 
+have some limitations; they represent the order of viable mutations needed
+to transpire in the progression of a tumor, this is representative of sign
+epistasis, a phenomenon that describes that the effect of a gene mutation depends
+on its genetic background. But only providing the possible succession of mutations
+and no fitness details of those genotypes is an important restriction as there
+are other relevant events found in cancer, such as reciprocal sign epistasis, 
+that it isn't able to describe but fitness landscapes can @uriarte18.   
 
-## Styles
+Reciprocal sign epistasis is an event in which the genetic interaction of two
+co-occurring mutations has an effect on the fitness of the genotype different
+from the one they have individually; this comes in two flavors: synthetic 
+lethality when the combination of those mutations is lethal to the cell, and
+synthetic viability when their co-occurrence increases the overall fitness.  
+This phenomena are well manifested in fitness landscapes as peaks and valleys.  
 
-The `html_vignette` template includes a basic CSS theme. To override this theme you can specify your own CSS in the document metadata as follows:
+This high variance of fitness due to mutation interactions materializes as 
+multiple possible evolutionary paths in fitness landscapes, where the order of 
+mutations can have restrictions or show patterns of complementarity or exclusivity
+(either synthetic lethality or the fact gaining a second mutation on the same
+pathway doesn´t increase fitness).  
 
-    output: 
-      rmarkdown::html_vignette:
-        css: mystyles.css
+As many tumor progression models are based on DAGs and carry their limitations,
+various algorithms have been created to infer pathway modules with their order of
+mutation accumulation coming from cross-sectional data to obtain better models 
+@schill19.
+
+In this assignment we will use OncoSimulR's capabilities to map the simulation
+of data of those models to show various possible interactions such as 
+mutual exclusivity.
+ 
+# Set of examples of colorectal cancer models  
+
+pathTiMEx is an algorithm that takes cancer dataset and generates a probabilistic
+model describing tumor progression in its temporal order of mutations in
+mutually exclusive driver pathways @cristea17.  
+
+The first few examples that we will show come from a colorectal cancer dataset
+provided in @wood07. In Figure 3A (left) we can see the optimal set of pathway
+mutations inferred by pathTiMEx that was consonant with previous knowledge.
+
+![pathTiMEx, colorectal cancer Figure 3A Left](figures/path_figure3a.png)
+
+Mapping that DAG with OncoSimulR looks like this:  
+
+```{r example1_pathtimex_opt }
+pt_cr_3A <- allFitnessEffects(data.frame(
+  parent = c("Root", "Root", "Root", "A", "B", "C"),
+  child = c("A", "C", "E", "B", "D", "D"),
+  s = 0.5,
+  sh = -1,
+  typeDep = "MN"),
+  geneToModule = c("Root" = "Root",
+                   "A" = "APC",
+                   "B" = "KRAS",
+                   "C" = "TP53, EVC2",
+                   "D" = "FBXW7, TCF7L2",
+                   "E" = "PIK3CA, EPHA3"
+  ))
+
+plot(pt_cr_3A, expandModules = TRUE)
+
+(cr_3A <- evalAllGenotypes(pt_cr_3A, order = FALSE, addwt = TRUE))
+
+plot(cr_3A)
+```
+
+In other studies they assumed that cancer progressed following a single linear
+path, so for the sake of comparison with those, in @cristea17  they set that
+restriction to pathTiMEx for the previous dataset, obtaining a somewhat
+similar set of mutations to those references. This more basic approach infers 
+differences as the mutation in TP53 takes place before the one for KRAS as show
+in Figure 4A.
+
+![pathTiMEx, colorectal cancer Figure 4A Left](figures/path_figure4a.png)
+
+```{r example2_pathtimex_linear}
+# Translating the DAG from Figure 4A (left) using modules
+pt_cr_4a <- allFitnessEffects(data.frame(parent = c("Root", "A", "B", "C"),
+                                     child = c("A", "B", "C", "D"),
+                                     s = 0.1,
+                                     sh = -0.01,
+                                     typeDep = "MN"),
+                          geneToModule = c("Root" = "Root",
+                                           "A" = "APC, EPHA3",
+                                           "B" = "EVC2, PIK3CA, TP53",
+                                           "C" = "KRAS, TCF7L2",
+                                           "D" = "FBXW7")
+                          )
+
+plot(pt_cr_4a, expandModules = TRUE, autofit = TRUE)
+
+# Obtaining and plotting the fitness for all possible genotypes
+eag_cr_4a <- evalAllGenotypes(pt_cr_4a)
+plot(eag_cr_4a, use_greppel = TRUE) # Looks hideous
+
+# Showcase of a simulation of population change over time
+simul_cr_4a_short <- oncoSimulIndiv(pt_cr_4a,
+                              model="McFL",
+                              onlyCancer = FALSE,
+                              finalTime = 1000,
+                              verbosity = 0,
+                              mu = 1e-5,          # Standard mutation rate
+                              initSize = 2000,
+                              keepPhylog = TRUE,
+                              seed = NULL,
+                              detectionProb = NA,
+                              detectionSize = NA,
+                              errorHitMaxTries = FALSE,
+                              errorHitWallTime = FALSE)
+plot(simul_cr_4a_short, show = "genotypes", type = "line", 
+     lwdClone = 2, legend.ncols = 4)
+
+
+# Second showcase changing some 
+simul_cr_4a_long <- oncoSimulIndiv(pt_cr_4a,
+                              model="McFL",
+                              onlyCancer = FALSE,
+                              finalTime = 5000,
+                              verbosity = 0,
+                              mu = 1e-5,          # Standard mutation rate
+                              initSize = 2000,
+                              keepPhylog = TRUE,
+                              seed = NULL,
+                              detectionProb = NA,
+                              detectionSize = NA,
+                              errorHitMaxTries = FALSE,
+                              errorHitWallTime = FALSE)
+plot(simul_cr_4a_long, show = "genotypes", type = "line", 
+     lwdClone = 2, legend.ncols = 4)
+
+```
+
+
+# Set of examples from glioblastoma 
+Resumen
+
+@cristea17
+
+```{r tomate, echo=FALSE, out.width="90%", out.height="90%", fig.cap="\\label{fig:tomate}Ye."}
+knitr::include_graphics("figures/path_figure3c.png")
+```
+
+In Figure \@ref(fig:tomate) we notice its low quality
+
+@ciriello12
+```{r, echo=FALSE, out.width="130%", out.height="130%", fig.cap="Mi vieja."}
+knitr::include_graphics("figures/ciriello_figure2.png")
+```
+
+
+@mohag20
+
+![Mohaghegh 2020, colorectal cancer Figure 8C](figures/mohag_figure8c.png){height="720px"}
 
 ## Figures
-
-
-
-
 You can enable figure captions by `fig_caption: yes` in YAML:
 
     output:
@@ -62,68 +213,5 @@ You can enable figure captions by `fig_caption: yes` in YAML:
 
 Then you can use the chunk option `fig.cap = "Your figure caption."` in **knitr**.
 
-## More Examples
 
-You can write math expressions, e.g. $Y = X\beta + \epsilon$, footnotes^[A footnote here.], and tables, e.g. using `knitr::kable()`.
 
-```{r, echo=FALSE, results='asis'}
-knitr::kable(head(mtcars, 10))
-```
-
-Mi super vieja:
-```{r example5_fitness, message=FALSE}
-fitness_rel <- function(a, b, r, g, gt = c("WT", "S", "I", "D")) {
-    data.frame(
-      Genotype = gt,
-      Fitness = c("1",
-                  paste0("1 + ", a, " * f_D"),
-                  paste0("1 + 1 - ", g),
-                  paste0("1 + (1 - f_I - f_D) * (1 - ", b, " + ", 
-                         a, ") + f_I * (1 - ", b, " + ", r,
-                         ") + f_D * (1 - 2 * ", b, ") + 1 - ", b, 
-                         " + ", a, " + f_I * (", r, " - ",
-                         a, ") - f_D * (", b, " + ", a, ")"))
-                  )
-}
-```
-
-```{r example5scen1, message=FALSE}
-scen1 <- allFitnessEffects(genotFitness = fitness_rel(a = 0.5, b = 0.7,
-                                                     r = 0.1, g = 0.8),
-                          frequencyDependentFitness = TRUE,
-                          frequencyType = "rel")
-
-set.seed(1)
-simulScen1 <- oncoSimulIndiv(scen1,
-                              model = "McFL",
-                              onlyCancer = FALSE,
-                              finalTime = 70,
-                              mu = 1e-4,
-                              initSize = 5000,
-                              keepPhylog = TRUE,
-                              seed = NULL,
-                              errorHitMaxTries = FALSE,
-                              errorHitWallTime = FALSE)
-op <- par(mfrow = c(1, 2))
-plot(simulScen1, show = "genotypes", type = "line",
-     main = "First scenario",
-     cex.main = 1.4, cex.lab = 1.1,
-     las = 1)
-plot(simulScen1, show = "genotypes",
-     main = "First scenario",
-     cex.main = 1.4, cex.lab = 1.1,
-     las = 1)
-par(op)
-par(mfrow = c(1, 1))
-plot(simulScen1, show = "genotypes",
-     main = "First scenario",
-     cex.main = 1.4, cex.lab = 1.1,
-     las = 1)
-```
-
-@uriarte17
-
-Also a quote using `>`:
-
-> "He who gives up [code] safety for [code] speed deserves neither."
-([via](https://twitter.com/hadleywickham/status/504368538874703872))
