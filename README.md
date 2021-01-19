@@ -1,1 +1,1 @@
-# Para guardar cosas que vayamos haciendo, como código o la viñeta explicativa
+Para guardar cosas que vayamos haciendo, como código o la viñeta explicativa
