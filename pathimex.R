@@ -1,6 +1,6 @@
 library(OncoSimulR)
 set.seed(1) 
-# no s? si esto es necesario, pero creo que s? para que los datos de
+# no se si esto es necesario, pero creo que s? para que los datos de
 # las simulaciones sean m?s reproducibles
 
 ################################
