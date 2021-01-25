@@ -34,56 +34,58 @@ library(reshape2)
 library(OncoSimulR)
 ```
 
-# Introduction ## {#intro}
+# Introduction and objectives ## {#intro}
 
-Understating the factors involved in tumor progression can lead to highlight
-gene interactions or key mutations that would be valuable for various 
-therapeutic purposes.  
+As cancer is a collection of complex diseases that prove to be a challenge in their
+characterization due to the many interactions in their biology, _in silico_ models
+that integrate available data from experimental studies and analytical predictions
+are essential to tackle this challenge. One of the possible approaches to
+research cancer is understating the factors involved in tumor progression as it 
+can lead to highlight gene interactions or key mutations that would be valuable
+for several therapeutic purposes (@edelman10).  
 
-One of the tools used to do so are cancer progression models ( __CPMs__ ), which
-allow us to identify the constrains or dependencies in the order of accumulation
-of mutations that take place during tumor development. They return directed
-acyclic graphs ( __DAGs__ ) in which the vertices or nodes are the potentially
-mutated genes, and their restriction/relationships are the edges of the graph;
-thus representing the possible genotypes that can occur in that tumor.  
+One of the tools used to do so are cancer progression models **(CPMs)**, which use
+data coming from cross-sectional studies to model the path that this event follows,
+allowing us to identify the constrains or dependencies in the order of accumulation
+of mutations that take place during tumor development and the possible mutational
+trajectories of the tumor, thus presenting with the ability to search for potential
+candidate genes that could be useful in our therapeutic motivation (such as target
+genes in relevant pathways that could be used to block that tumor progression).  
+These CPMS return directed acyclic graphs **(DAGs)** in which the vertices or nodes
+are the potentially mutated genes, and their relationships are the
+edges of the graph (arrows representing temporal order of mutations);
+therefore delimiting the possible genotypes that can occur in that tumor as
+they must fulfill whats restricted within the DAGs (@uriarte19).  
 
-Another convenient approach to understand cancer progression are fitness landscapes,
-which specify the observed genotypes and their fitness delimiting paths from 
-the wild-type to further stages as it accumulates mutations. 
+Another convenient approach to understand cancer progression are **fitness landscapes**,
+which are maps that specify the observed genotypes and their fitness delimiting 
+multiple paths that can be reached from the wild-type to further stages as it
+accumulates mutations. In these maps we can find accessible genotypes, these
+are mutational pathways along different genotypes where each one of those is 
+separated by a single mutational event and the fitness increases in every step
+taken (@franke11); as said before, understanding the most probable tumor
+progression paths is key to approach cancer treatment and diagnosis, so incorporating
+fitness effects further reinforces the prediction of cancer evolution.
 
-Although fitness landscapes are highly useful, obtaining them isn't as easy as
-delimiting DAGs from a CPM. Both methods aren't interchangeable as DAGs 
-have some limitations; they represent the order of viable mutations needed
-to transpire in the progression of a tumor, this is representative of sign
-epistasis, a phenomenon that describes that the effect of a gene mutation depends
-on its genetic background. But only providing the possible succession of mutations
-and no fitness details of those genotypes is an important restriction as there
-are other relevant events found in cancer, such as reciprocal sign epistasis, 
-that it isn't able to describe but fitness landscapes can (@uriarte18).   
-
-Reciprocal sign epistasis is an event in which the genetic interaction of two
-co-occurring mutations has an effect on the fitness of the genotype different
-from the one they have individually; this comes in two flavors: synthetic 
-lethality when the combination of those mutations is lethal to the cell, and
-synthetic viability when their co-occurrence increases the overall fitness.  
-This phenomena are well manifested in fitness landscapes as peaks and valleys.  
-
-This high variance of fitness due to mutation interactions materializes as 
-multiple possible evolutionary paths in fitness landscapes, where the order of 
-mutations can have restrictions or show patterns of complementarity or exclusivity
+The high variance of fitness due to complex and varied mutation interactions
+materializes as multiple possible evolutionary paths where the order of mutations
+can have restrictions or show patterns of complementarity or exclusivity
 (either synthetic lethality or the fact gaining a second mutation on the same
-pathway doesn´t increase fitness). METER 
+pathway doesn't increase fitness); these intricate interactions are not captured
+as well by CPMs as is the case for fitness landscapes (@uriarte18),
+but given that producing a comprehensive version of the latter is no easy task 
+many tumor progression models are based on DAGs and carry their limitations.  
 
-As many tumor progression models are based on DAGs and carry their limitations,
-various algorithms have been created to infer pathway modules with their order of
-mutation accumulation coming from cross-sectional data to obtain better models 
-(@schill19).
+Various algorithms have been created to infer pathway modules with their order of
+mutation accumulation incorporating these complex patterns of mutual exclusivity
+to obtain better models based on DAGs (@schill19), but as they don't validate 
+their performance with evolutionary models that evaluation might compromise their
+robustness.
 
-Genes in modules? What more to explain in the introduction
-
-In this assignment we will use `OncoSimulR`'s capabilities to map the simulation
-of data of those models to show various possible interactions such as 
-mutual exclusivity.
+For this reason, in this assignment we will use the `OncoSimulR` package's
+capabilities to map the simulation of data of models coming from two of those
+algorithms, critically assessing them by trying to replicate their examples
+and extending on what they're modeling, identifying limitations if any.
  
 # Colorectal cancer model from Cristea et al., 2017  ## {#cr_mods}
 
@@ -98,24 +100,26 @@ a linear path (order of mutations) was used as a restriction or not.
 
 ## Examples of colorectal cancer model without linear progression ## {#pathex1}
 
-On the left-hand side of Figure 3A we can see the optimal set of pathway mutations
-inferred by pathTiMEx without using the limitation of a linear path; the results
-obtained were consonant with previous knowledge.
+On the left-hand side of Figure 3A (\@ref(fig:path3a)) we can see the optimal set
+of pathway mutations inferred by pathTiMEx without using the limitation of a
+linear path; the results obtained were consonant with previous knowledge.
 
-```{r path3a, echo=FALSE, out.width="70%", out.height="70%", fig.cap="Figure 3A, left panel"}
+```{r path3a, echo=FALSE, out.width="70%", out.height="70%", fig.cap="Adapation of the left-hand side of Figure 3A from @cristea17, in which they showcase the optimal ordered set of mutations inferred by pathTiMEx for a colorectal cancer dataset. In the figure, each coloured block corresponds to a set of mutually exclusive genes in the pathway, $\\lambda$ is the rate of evolution that the algorithm uses as an estimate of waiting time of the alteration (the higher the value the earlier the event is), and $\\mu$ its mutual exclusivity intensity (a measure of the probabilty that the pathway is perfetcly mutually exclusive); finally, the percentage in each arrow indicates how many of the pathTiMEx solutions converged for all the runs and iterations performed."}
 knitr::include_graphics("figures/path_figure3a.png")
 ```
 
-This figure shows that the temporal order of mutations in APC, KRAS and TP53
-is maintained. There are two modules with mutual exclusivity, TP53/EVC2 and
-PIK3CCA/EPHA3, that do not have a parent node but are nevertheless represented.
+This figure shows two modules with mutual exclusivity, TP53/EVC2 and
+PIK3CA/EPHA3, that do not have a parent node but are nevertheless represented.
 This means that order restrictions for mutations in these modules are not 
 known, but the authors did find that these mutations occur at certain time 
 points in tumor progression: mutations in TP53/EVC2 usually happen after
 mutations in KRAS, while mutations in the PIK3CA/EPHA3 module were found to 
-take place in later stages of tumor progression.
+take place in later stages of tumor progression. Therefore, this model 
+recapitulates the temporal order of mutations in APC, KRAS and TP53
+that is agreed on in the literature (@fearon90, @fearon11).
 
-### 1st approach: Nodes with unkown requisites branching from the root ## {#pathex1_1}
+
+### 1st approach: Nodes with unkown requisites branching from the root ## {#pathex11}
 
 With `OncoSimulR` we can represent this situation of knowing the temporal order
 as in _"Mutation X happens after mutation in Y"_, creating a simple DAG of 
@@ -156,7 +160,7 @@ plot(eAG_wood_root)  # Overlapping labels
 plot(eAG_wood_root, show_labels = FALSE) # Still not very good
 ```
 
-A further step would be using the OncoSimulR function `oncoSimulIndiv` to
+A further step would be using the `OncoSimulR` function `oncoSimulIndiv` to
 simulate tumor progression. As a lot of genotypes appear during this simulation,
 we decided to plot the progression in the number of drivers instead:
 
@@ -212,7 +216,7 @@ the genotypes that appear are:
 plotClonePhylog(simul_wood_root)
 ```
 
-### 2nd approach: Adding order effects ## {#pathex1_2}
+### 2nd approach: Adding order effects ## {#pathex12}
 
 We could use the same DAG of restrictions but adding order effects;
 the authors do not mention or suggest the existence of these effects in this
@@ -242,9 +246,9 @@ wood_order <- allFitnessEffects(data.frame(
                          "D" = "FBXW7, TCF7L2",
                          "E" = "PIK3CA, EPHA3"),
         drvNames = wood_drv,
-        orderEffects = c("B > C" = 0.02,
-                         "B > E" = 0.02,
-                         "C > E" = 0.01)
+        orderEffects = c("B > C" = 0.1,
+                         "B > E" = 0.1,
+                         "C > E" = 0.05)
         )
 
 plot(wood_order, expandModules = TRUE, autofit = TRUE)
@@ -256,7 +260,7 @@ eAG_wood_order <- evalAllGenotypes(wood_order, order = TRUE, max = 110000)
 We could perform simulations with `oncoSimulPop`, which calls `oncoSimulIndiv`
 multiple times (in this case, 25):
 
-```{r path_ex2_simul}
+```{r path_ex2_simul, message=FALSE}
 simul_order <- oncoSimulPop(25, wood_order,
                               model = "McFL",
                               onlyCancer = FALSE,
@@ -274,24 +278,25 @@ simul_order <- oncoSimulPop(25, wood_order,
                               errorHitWallTime = FALSE)
 ```
 
-Now, we will take a sample from this simulation and plot the resulting genotypes:
+Now, we will take a sample from this simulation using `samplePop`and plot the
+resulting genotypes using `ggplot2`:
 
 ```{r path_ex2_simul_sample, message= FALSE}
 sp_order <- samplePop(simul_order, "unif", "singleCell")
+
 ordered.df <- sp_order[ , c(1, 5, 8, 3, 4, 7, 6, 2)] # Reorders columns
 df.long <- melt(ordered.df) # Convert wide to long
-gg <- ggplot(subset(df.long, value == 1), aes(x = Var1, y = Var2))
-gg <- gg + geom_point(size = 3, shape = 22, aes(fill = Var2))
-gg <- gg + labs(y = "Mutated gene", x = "Simulation")
+gg <- ggplot(subset(df.long, value == 1), aes(x = Var1, y = Var2)) +
+  geom_point(size = 3, shape = 22, aes(fill = Var2)) +
+  labs(y = "Mutated gene", x = "Simulation")
 gg
 ```
 
-### One step further: What if these nodes depend on KRAS? ## {#pathex1_3}
+### One step further: What if these nodes depend on KRAS? ## {#pathex13}
 Now that we believe we have implemented the model described by the authors, we
 wanted to model a situation in which the modules TP53/EVC2 and PIK3CA/EPHA3
 depend from KRAS. Note that this is different from the model described by the
 authors, as we are now assuming a restriction that they did not report: 
-
 
 ```{r path_ex3_fig3a_order_effects_kras}
 wood_kras <- allFitnessEffects(data.frame(
@@ -338,9 +343,9 @@ sp_kras <- samplePop(simul_kras, "unif", "singleCell")
 
 ordered.df <- sp_kras[ , c(1, 5, 8, 3, 4, 7, 6, 2)] # Reorders columns
 df.long <- melt(ordered.df) # Convert wide to long
-gg <- ggplot(subset(df.long, value == 1), aes(x = Var1, y = Var2))
-gg <- gg + geom_point(size = 3, shape = 22, aes(fill = Var2))
-gg <- gg + labs(y = "Mutated gene", x = "Simulation")
+gg <- ggplot(subset(df.long, value == 1), aes(x = Var1, y = Var2)) +
+  geom_point(size = 3, shape = 22, aes(fill = Var2)) +
+  labs(y = "Mutated gene", x = "Simulation")
 gg
 ```
 
@@ -352,11 +357,11 @@ in driver mutations that we already mentioned, as mutations in TP53 would appear
 before mutations in KRAS, and imposes an "artificial" restriction on tumor 
 progression by enforcing a linear progression. We still thought it could be 
 illustrative to show the DAG of restrictions, but we will not go deeper into
-this model.
+this model.  
 
 The DAG was taken from the left-hand side of Figure 4A.
 
-```{r path4a, echo=FALSE, out.width="30%", out.height="30%", fig.cap=" Figura 4A de PathTiMEx."}
+```{r path4a, echo=FALSE, out.width="30%", out.height="30%", fig.cap="Adapation of the left-hand side of Figure 4A from @cristea17. Here we see the patwhay inferred by pathTiMEx when assumming that the mutational events from a colorectal cancer set follow a linear progression, as @vandin15 did in their model. The number of mismatches indicate the instances where the constrain of both mutual exclusivity and progression were infringed."}
 knitr::include_graphics("figures/path_figure4a.png")
 ```
 
@@ -373,9 +378,7 @@ wood_linear <- allFitnessEffects(data.frame(parent = c("Root", "A", "B", "C"),
                                                    "B" = "EVC2, PIK3CA, TP53",
                                                    "C" = "KRAS, TCF7L2",
                                                    "D" = "FBXW7"),
-                                  drvNames = wood_drv
-                                  )
-
+                                  drvNames = wood_drv)
 
 plot(wood_linear, expandModules = TRUE, autofit = TRUE)
 ```
@@ -383,20 +386,24 @@ plot(wood_linear, expandModules = TRUE, autofit = TRUE)
 
 ## Order effects vs. monotonic dependency ## {#pathex3}
 
-We have seen four approaches. Three of them use Figure 3A as base to build
-the DAG, with small differences as there are two nodes (TP53/EVC2 and PIK3CA/
-EPHA2) that the authors describe as "independent" and that do not have a
-parent node in the graph. In order to include these nodes in our model, we 
-have devised three possible approaches: 
+We have seen four approaches. Three of them use Figure 3A (\@ref(fig:path3a))
+as the base to build the DAG, with small differences as there are two nodes 
+(TP53/EVC2 and PIK3CA/EPHA2) that the authors describe as "independent" and that
+do not have a parent node in the graph. In order to include these nodes in our
+model, we have devised three possible approaches: 
 
-(1) these nodes come from the root node (i.e. the wild type) (Section \@ref(pathex1)); 
+(1) these nodes come from the root node (i.e. the wild type) (Section \@ref(pathex11));
+
 (2) these nodes are independent (as the authors suggest) and the effects of 
-    these mutations are different depending on the order in which they occur;
-(3) these nodes are both child nodes from KRAS.
+    these mutations are different depending on the order in which they occur
+    (Section \@ref(pathex12));
+    
+(3) these nodes are both child nodes from KRAS (Section \@ref(pathex13)).  
 
-The last approach (4) is based on Figure 4A, where a linear progression is 
-imposed, but we will not focus on this one as we believe it is imposing 
-artificial restraints on tumor progression.
+The last approach (4) (Section \@ref(pathex2)) is based on Figure 4A
+(shown in this vignette as Figure \@ref(fig:path4a)), where a linear progression is imposed, but we will not
+focus on this one as we believe it is imposing artificial restraints on tumor
+progression.  
 
 As for approaches (2) and (3), the former is what we believe results in a most
 accurate description of the model, as it does not assume any new dependencies. We
@@ -414,31 +421,22 @@ between two genes A and B, 'A > B', means that A is mutated before B):
 ```{r path_ex_discuss_1}
 
 ## If we use order effects, these genotypes will have different fitnesses:
-eAG_wood_order[grep("^APC > TP53 > KRAS$", eAG_wood_order[,1]),]  
+ex1 <- eAG_wood_order[grep("^APC > TP53 > KRAS$", eAG_wood_order[,1]),]  
 
-#              Genotype Fitness
-# 104 APC > TP53 > KRAS    1.44
+ex1 # It fitness is 1. 44 = 1.2 * 1.2
 
-# 1. 44 = 1.2 * 1.2
+ex2 <- eAG_wood_order[grep("^APC > KRAS > TP53$", eAG_wood_order[,1]),]   
 
-eAG_wood_order[grep("^APC > KRAS > TP53$", eAG_wood_order[,1]),]   
-
-#            Genotype Fitness
-# 88 APC > KRAS > TP53  1.4688
-
-# 1.4688 = 1.2 * 1.2 * 1.02 --> extra advantage thanks to the order effects
+ex2 # 1.584 = 1.2 * 1.2 * 1.1 --> Extra advantage thanks to the order effects
 ```
 
 In the `wood_kras` model, there is only one possible genotype, in which all
 restrictions are followed and the mutation order is APC > KRAS > TP53:
 
 ```{r path_ex_discuss_2}
-eAG_wood_kras[54,]   
- 
-#           Genotype Fitness
-# 54 APC, KRAS, TP53   1.728
+ex3 <- eAG_wood_kras[54,]   
 
-# 1.728 = 1.2 * 1.2 * 1.2
+ex3 # 1.728 = 1.2 * 1.2 * 1.2
 ```
 
 We would see a similar thing if we added mutations in PIK3CA to the previous
@@ -450,36 +448,27 @@ the two models are, in fact, very different from each other; and that assuming
 an extra restriction has great effects on fitness:
 
 ```{r path_ex_discuss_3}
+ex4 <- eAG_wood_kras[35,]   
 
-eAG_wood_kras[35,]   
+ex4 # Fitness of 0.01 = 0.1 * 0.1
 
-#        Genotype Fitness
-# 35 PIK3CA, TP53    0.01
+ex5 <- eAG_wood_order[grep("^PIK3CA > TP53$", eAG_wood_order[,1]),]  
 
-# 0.01 = 0.1 * 0.1
+    # 1 --> There is no positive (or negative) effect on fitness
+    # relative to the wild type
+ex5
 
-eAG_wood_order[grep("^PIK3CA > TP53$", eAG_wood_order[,1]),]  
+ex6 <- eAG_wood_order[grep("^TP53 > PIK3CA$", eAG_wood_order[,1]),]   
 
-#         Genotype Fitness
-# 50 PIK3CA > TP53       1
-
-# 1 --> There is no positive (or negative) effect on fitness
-# relative to the wild type
-
-eAG_wood_order[grep("^TP53 > PIK3CA$", eAG_wood_order[,1]),]   
-
-#         Genotype Fitness
-# 63 TP53 > PIK3CA    1.01
-
-# 1.01 = 1 * 1.01
+ex6 # Fitness of 1.05 = 1 * 1.05
 ```
 
 # Glioblastoma multiforme models ## {#gb_mods}
 
-## @cristea17 ## {#crist17}
+## Cristea et al., 2017 ## {#crist17}
 
-@cristea17 also showcased pathTiMEx's performance using a large gliobastoma 
-dataset from The Cancer Genome Atlas Program (TCGA) (@cerami12); we will
+@cristea17 also showcased pathTiMEx's performance using a large gliobastoma multiforme
+(GBM) dataset from The Cancer Genome Atlas Program (TCGA) (@cerami12); we will
 map the DAG coming from the left-hand side of Figure 3C (\@ref(fig:path3c)).
 Our purpose here is to show that tumor progression in glioblastoma multiforme
 seems much more complex: all the nodes are modules with mutual exclusivity,
@@ -491,7 +480,7 @@ The authors solved this issue by differentiating the type of mutation that happe
 in each case, but having modules with overlapping genes can be a problem, as
 we will see in the next section.
 
-```{r path3c, echo=FALSE, out.width="90%", out.height="90%",fig.cap= "\\label{fig:tomate}. Detail of left-hand size of Figure 3C from @cristea17."}
+```{r path3c, echo=FALSE, out.width="90%", out.height="90%",fig.cap= "Adapation of the left-hand side of Figure 3C from @cristea17, in which they showcase the optimal ordered set of mutations inferred by pathTiMEx for a colorectal cancer dataset. In the figure, each coloured block corresponds to a set of mutually exclusive genes in the pathway, $\\lambda$ is the rate of evolution that the algorithm uses as an estimate of waiting time of the alteration (the higher the value the earlier the event is), and $\\mu$ its mutual exclusivity intensity (a measure of the probabilty that the pathway is perfetcly mutually exclusive); finally, the percentage in each arrow indicates how many of the pathTiMEx solutions converged for all the runs and iterations performed."}
 knitr::include_graphics("figures/path_figure3c.png")
 ```
 
@@ -549,11 +538,11 @@ TCGA_gb_order <- allFitnessEffects(data.frame(
                          "D" = "PTEN-M, PTEN-D, PIK3CA, IDH1",
                          "E" = "PDGFRA, LRP2",
                          "F" = "EGFR, RB1, TP53-D, PAOX"),
-        orderEffects = c("A > C" = 0.02,
-                         "A > D" = 0.02,
-                         "B > F" = 0.02,
-                         "C > F" = 0.02,
-                         "D > F" = 0.02)
+        orderEffects = c("A > C" = 0.1,
+                         "A > D" = 0.1,
+                         "B > F" = 0.1,
+                         "C > F" = 0.1,
+                         "D > F" = 0.1)
         )
 
 plot(TCGA_gb_order, expandModules = TRUE, autofit = TRUE)
@@ -578,24 +567,36 @@ TCGA_gb_dep <- allFitnessEffects(data.frame(
 plot(TCGA_gb_dep, expandModules = TRUE, autofit = TRUE)
 ```
 
-
 ## Ciriello et al., 2012 ## {#ciri12}
 
-Continuing with the modeling of mutual exclusivity relationships in cancer, we tried to map two examples described in @ciriello12.
+Continuing with the modeling of mutual exclusivity relationships in cancer, we
+tried to map two examples described in @ciriello12.
 
-These authors developed a novel tool to detect mutual exclusivity networks and tested it with multiple dataset, including the glioblastoma multiforme from TGCA. This software identifies the mutual exclusivity genomic alterations in the PI(3)K, p53 and Rb pathways but it also remarks the possibility of finding a gene represented in more than one module. 
+These authors developed a novel tool to detect mutual exclusivity networks and
+tested it with multiple dataset, including the glioblastoma multiforme from TGCA.
+This software named MEMo (Mutual Exclusivity Modules in cancer) identifies the
+mutual exclusivity genomic alterations in the PI(3)K, p53 (or TP53) and Rb pathways
+but it also remarks the possibility of finding a gene represented in more than one module.   
 
-We know this last point is contrary to the very definition of module, which states that "each module is a set of genes and the intersection between modules is the empty set". All the same, the literature is full of examples where a gene is involved in more than one pathway so we considered that modeling this cases would be of great interest.
+We know this last point is contrary to the very definition of module, which states
+that _"each module is a set of genes and the intersection between modules is the empty set"._
+All the same, the literature is full of examples where a gene is involved in more
+than one pathway so we considered that modeling this cases would be of great interest.
 
-### Case A: Mutual exclusivity pair broken inside a module ## {#ciri12_a}
+### Case A: Mutual exclusivity pair broken inside a module ## {#ciri12a}
 
-The algorithm of Cirello et al. was able to detect 2 mutual exclusivity networks within one pathway. This is the Rb signalling pathway, which is composed of 4 genes: CDKN2A, CDKN2B, CDK4 and RB1. The first network includes CDKN2A, CDK4 and Rb1 while the other is formed by CDKN2B, CDK4 and Rb1. 
+The algorithm of @ciriello12 was able to detect two mutual exclusivity networks
+within one pathway. This is the Rb signalling pathway, which is composed of 4 genes:
+CDKN2A, CDKN2B, CDK4 and RB1. The first network includes CDKN2A, CDK4 and Rb1 while
+the other is formed by CDKN2B, CDK4 and Rb1. 
 
-```{r, echo=FALSE, out.width="130%", out.height="130%", fig.cap="Fig X. Poner pie"}
+```{r, echo=FALSE, out.width="140%", out.height="140%", fig.cap="Adaptation of Figure 2A from @ciriello12. In the upper section of the image we see the results for the top scoring mutually exclusive pathway modules inferred by MEMo from 138 GBM cases that were available in TCGA; below that there's a color-coded recolection of the mutations found for each gene in all cases and the percentage they represent."}
 knitr::include_graphics("figures/ciriello_figure1.png")
 ```
 
-Then, modeling this example seems to be conceptually easy because we just need to define 2 modules representing each mutual exclusivity network, but it is technically impossible.
+Then, modeling this example seems to be conceptually easy because we just need
+to define two modules representing each mutual exclusivity network, but it is
+technically impossible as `OncoSimulR` will return an error message.
 
 ```{r GB_modules_1, error=TRUE}
 PT_cr_simple <- allFitnessEffects(data.frame(parent = c("Root", "Root"),
@@ -607,15 +608,37 @@ PT_cr_simple <- allFitnessEffects(data.frame(parent = c("Root", "Root"),
                                                               "B" = "CDKN2B, CDK4, Rb1"))
 ```
 
-This situation led us to specify the fitness of each genotype manually. For this purpose, we examined the data and came to the conclusion that the fitness of the genotypes CDKN2A+CDKN2B, CDK4 and Rb1 must be the same so we can find any of these possibilities when we run multiple simulations (if any of these genotypes had a higher or lower fitness than the others we would find it overrepresented or never observed). Then we set (arbitrarially) the fitness of these genotypes to 4, being the fitness of CDKN2A or CDKN2B alone 2 (following the multiplicative model)
+This situation led us to specify the fitness of each genotype manually. For this
+purpose, we examined the data and came to the conclusion that the fitness of the
+genotypes CDKN2A+CDKN2B, CDK4 and Rb1 must be the same so we can find any of these 
+possibilities when we run multiple simulations (if any of these genotypes had a
+higher or lower fitness than the others we would find it overrepresented or never
+observed). Then we set (arbitrarily) the fitness of these genotypes to 4, being
+the fitness of CDKN2A or CDKN2B alone 2 (following the multiplicative model).
 
-Beyond these asumption, more questions are raised when we think of more complex genotypes. Specifting the fitness of each combination of genotypes is not a trivial task:
+Beyond these assumption, more questions are raised when we think of more complex
+genotypes. Specifying the fitness of each combination of genotypes is not a
+trivial task:
 
-* If we start from a mutation in CDKN2A or CDNK2B (fitness = 2) and we add a mutation in CDK4 or Rb1, the fitness of the resultant genotype would still be 2 since they are mutually exclusive (it doesn't add any selective advantage). However, if we want to reach the same genotype following a different order, we find that adding a mutation in CDKN2A or CDNK2B to a CDK4 or RB1 clone (fitness = 4) would find a decrease in fitness that is not justified biologically.
-* Alternatively, we could set the fitness of CDNK2A/CDKN2B + CDK4/RB1 clones to 4 (to avoid the unjustified decrease), but this would mean that adding a mutation in CDK4/RB1 to a CDNK2A/CDKN2B clone involves an increase in the fitness (2 -> 4) that breaks the mutual exclusuvity principle. 
-* Another option is to specify order effects in the genotypes so we could avoid the drawback from the previous points, but we didn't find a biological reason that could explain that a CDKN2A > CDKN2A, CDK4 clone had a different fitness than CDK4 > CDKN2A, CDK4.
+* If we start from a mutation in CDKN2A or CDNK2B (fitness = 2) and we add a
+mutation in CDK4 or Rb1, the fitness of the resultant genotype would still be 2
+since they are mutually exclusive (it doesn't add any selective advantage).
+However, if we want to reach the same genotype following a different order,
+we find that adding a mutation in CDKN2A or CDNK2B to a CDK4 or RB1 clone (fitness = 4)
+would find a decrease in fitness that is not justified biologically.
 
-We represented the fitness landscape resulting from applying the first point so our problem can be visualized better:
+* Alternatively, we could set the fitness of CDNK2A/CDKN2B + CDK4/RB1 clones to
+4 (to avoid the unjustified decrease), but this would mean that adding a mutation
+in CDK4/RB1 to a CDNK2A/CDKN2B clone involves an increase in the fitness (2 -> 4)
+that breaks the mutual exclusivity principle. 
+
+* Another option is to specify order effects in the genotypes so we could avoid
+the drawback from the previous points, but we didn't find a biological reason
+that could explain that a CDKN2A > CDKN2A, CDK4 clone had a different fitness
+than CDK4 > CDKN2A, CDK4.
+
+We represented the fitness landscape resulting from applying the first point so
+our problem can be visualized better:
 
 ```{r, echo=FALSE}
 GB_ciri_manual <- data.frame(Genotype = c("WT", "CDKN2A", "CDKN2B", "CDK4", "RB1", 
@@ -636,7 +659,9 @@ GB_ciri_manual_eAG <- evalAllGenotypes(GB_ciri_manual_aFE, order = FALSE, addwt 
 plot(GB_ciri_manual_eAG, use_ggrepel = TRUE)
 ```
 
-In order to test the accuracy of this model reproducing the data we run several simulations. Note that we have adjusted the mutation frequency of each gene so we can obtain proportions of genotypes similar to the TCGA glioblastoma dataset. 
+In order to test the accuracy of this model reproducing the data we run several
+simulations. Note that we have adjusted the mutation frequency of each gene so
+we can obtain proportions of genotypes similar to the TCGA glioblastoma dataset. 
 
 ```{r, message=FALSE}
 muvar_gb <- c("CDKN2A" = 5e-4, "CDKN2B" = 5e-4, "CDK4" = 4e-5, "RB1" = 4e-5)
@@ -657,41 +682,68 @@ GB_ordered.df <- data_GB_simulPop[order(-data_GB_simulPop[,2],
                                      -data_GB_simulPop[,1],
                                      -data_GB_simulPop[,4]),]
 GB_df.long <- melt(GB_ordered.df)
-gg <- ggplot(subset(GB_df.long, value == 1), aes(x = Var1, y = Var2))
-gg <- gg + geom_point(size = 3, shape = 22, aes(fill = Var2))
-gg <- gg + labs(y = "Mutated gene", x = "Simulation")
+gg <- ggplot(subset(GB_df.long, value == 1), aes(x = Var1, y = Var2)) +
+  geom_point(size = 3, shape = 22, aes(fill = Var2)) +
+  labs(y = "Mutated gene", x = "Simulation")
 gg
 ```
 
-One interesting thing from this model is that, given the appropriate parameters, it replicates relatively well the data presented in @ciriello12. 
+One interesting thing from this model is that, given the appropriate parameters,
+it replicates relatively well the data presented in @ciriello12. 
 
-### Case B: One gene shared by two modules ## {#ciri_b}
+### Case B: One gene shared by two modules ## {#cirib}
 
-To further investigate the issue presented in this section, we decided to generate a model where a gene is shared by 2 different groups. 
+To further investigate the issue presented in this section, we decided to generate
+a model where a gene is shared by two different groups. 
 
-In this case, we have taken the previous mutually exclusive network formed by CDKN2A, CDK4 and RB1 and merged it with the network composed by CDKN2A, MDM2 and TP53, which @ciriello12 detected in the p53 signaling pathway
+In this case, we have taken the previous mutually exclusive network formed by
+CDKN2A, CDK4 and RB1 and merged it with the network composed by CDKN2A, MDM2 and
+TP53, which @ciriello12 detected in the p53 signaling pathway
 
-```{r, echo=FALSE, out.width="130%", out.height="130%", fig.cap="Fig X. Poner pie"}
+```{r, echo=FALSE, out.width="150%", out.height="150%", fig.cap="Adaptation of Figure 2A and 2B from @ciriello12, shown for comparison as we will combine the information they provide. In the upper section of each one we see the results for the top scoring mutually exclusive pathway modules inferred by MEMo from 138 GBM cases that were available in TCGA; below that there's a color-coded recolection of the mutations found for each gene in all cases and the percentage they represent."}
 knitr::include_graphics("figures/ciriello_figure2.png")
 ```
 
 We started by specifying the fitness manually again, following the next logic:
 
-* Each of the individual genotypes has the same fitness (e.g., 2 for the simplicity of the example)
-  + We could think of giving the CDKN2A a higher fitness since mutating it means affecting 2 pathways at the same time but this would lead to the breaking of the mutual exclusivity (e. g., P53 > P53, CDKN2A would involve a increase in fitness)
-  + We know that giving CDKN2A, CDK4 and RB1 the same fitness contradicts the previous example, but in this case we are not taking into account the presence of CDKN2B
-* Each pair of genes where each gene belong to a different module, except for the shared gene (CDKN2A), has a higher fitness (e.g 4, following the multiplicative model).
-  + This is nothing new, just considering the increase in fitness produced by 2 mutations in "unrelated" genes.
-* Then, we find again issues related to the specification of more complex genotypes. Specifically, when we add a mutually exclusivity gene to a non mutually exclusivity pair (e.g we have a CDK4, p53 clone (fitness = 4) and we add a mutation in CDKN2A). In these cases we have the 3 possibilities too (similar to the case A)
-  + The fitness of the 3 gene clone remains the same. This seems logical since we are adding a mutation in a gene that provides no advantage, but if we change the order of the mutations we see that the mutual exclusivity is broken
-     + CDK4, p53 (fitness = 4) -> CDK4, p53, CDKN2A (fitness = 4). This is ok
-     + CDK4, CDKN2A (fitness = 2) -> CDK4, p53, CDKN2A (fitness = 4). This is not ok, mutual exclusivity rule is broken.
-  + The fitness of the 3 gene clone is decreased in order to not to breax the mutual exclusivity rule. This lacks of apparent biological justification.
-  + The fitness of the 3 gene clone is different according to the order of mutations. Lacks of apparent biological justification too. 
+* Each of the individual genotypes has the same fitness (i.e., 2 for the simplicity of the example)
+  + We could think of giving the CDKN2A a higher fitness since mutating it means
+  affecting 2 pathways at the same time but this would lead to the breaking of the
+  mutual exclusivity (i.e., P53 > P53, CDKN2A would involve a increase in fitness)
+  
+  + We know that giving CDKN2A, CDK4 and RB1 the same fitness contradicts the previous
+  example, but in this case we are not taking into account the presence of CDKN2B
+  
+* Each pair of genes where each gene belong to a different module, except for the
+shared gene (CDKN2A), has a higher fitness (i.e., 4, following the multiplicative model).
 
-We represented the fitness landscape resulting from applying the second point, preserving the mutually exclusive principle (this doesn't mean it is correct):
+  + This is nothing new, just considering the increase in fitness produced by 2
+  mutations in "unrelated" genes.   
+  
+* Then, we find again issues related to the specification of more complex genotypes.
+Specifically, when we add a mutually exclusivity gene to a non mutually exclusivity
+pair (i.e., we have a CDK4, p53 clone (fitness = 4) and we add a mutation in CDKN2A).
+In these cases we have the 3 possibilities too (similar to the case A)  
 
-```{r}
+  + The fitness of the 3 gene clone remains the same. This seems logical since we
+  are adding a mutation in a gene that provides no advantage, but if we change the
+  order of the mutations we see that the mutual exclusivity is broken  
+  
+     + CDK4, p53 (fitness = 4) -> CDK4, p53, CDKN2A (fitness = 4). This is ok  
+     
+     + CDK4, CDKN2A (fitness = 2) -> CDK4, p53, CDKN2A (fitness = 4). This is not
+     ok, mutual exclusivity rule is broken.  
+     
+  + The fitness of the 3 gene clone is decreased in order to not to break the mutual
+  exclusivity rule. This lacks of apparent biological justification. 
+  
+  + The fitness of the 3 gene clone is different according to the order of mutations.
+  Lacks of apparent biological justification too.   
+
+We represented the fitness landscape resulting from applying the second point,
+preserving the mutually exclusive principle (this doesn't mean it is correct):
+
+```{r, message=FALSE, warning=FALSE}
 GB_2mod <- data.frame(Genotype = c("WT", "CDKN2A", "CDK4", "RB1", "TP53", "MDM2", #1, 2, 2, 2, 2, 2,
                                   "CDKN2A, CDK4", "CDKN2A, RB1", "CDKN2A, TP53", "CDKN2A, MDM2", #2, 2, 2, 2, 2
                                   "CDK4, RB1", "CDK4, TP53", "CDK4, MDM2",#2, 4, 4
@@ -731,7 +783,10 @@ plot(GB_2mod_eAG, use_ggrepel = TRUE)
 
 ```
 
-Simply looking at the fitness landscape we can see that this model is not going to replicate the results properly since the complex genotypes have considerably lower fitness (but this is needed to preserve the mutual exclusion logic). Anyway we decided to run simulations, similarilly to case A: 
+By simply looking at the fitness landscape we can see that this model is not going
+to replicate the results properly since the complex genotypes have considerably
+lower fitness (but this is needed to preserve the mutual exclusion logic). Anyway,
+we decided to run simulations, similarly to case A (Section \@ref(ciri12a)): 
 
 ```{r, message=FALSE}
 muvar_gb2 <- c("CDKN2A" = 5e-4, "CDK4" = 5e-5, "RB1" = 5e-5,
@@ -753,37 +808,55 @@ GB_ordered.df2 <- data_GB_simulPop2[order(-data_GB_simulPop2[,2],
                                      -data_GB_simulPop2[,1],
                                      -data_GB_simulPop2[,4]),]
 GB_df.long2 <- melt(GB_ordered.df2)
-gg <- ggplot(subset(GB_df.long2, value == 1), aes(x = Var1, y = Var2))
-gg <- gg + geom_point(size = 3, shape = 22, aes(fill = Var2))
-gg <- gg + labs(y = "Mutated gene", x = "Simulation")
+gg <- ggplot(subset(GB_df.long2, value == 1), aes(x = Var1, y = Var2)) +
+  geom_point(size = 3, shape = 22, aes(fill = Var2)) +
+  labs(y = "Mutated gene", x = "Simulation")
 gg
 ```
 
-In this case, we don't expect our model to simulate the data presented in @ciriello12 since most 2-gene clones have a fitness of 4 while all 3-gene, 4-gene and 5-gene genotypes have a fitness of 2 due to mutually exclusive restrictions. 
+In this case, we don't expect our model to simulate the data presented in @ciriello12
+since most 2-gene clones have a fitness of 4 while all 3-gene, 4-gene and 5-gene
+genotypes have a fitness of 2 due to mutually exclusive restrictions. 
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, fig.cap="Adaptation of Figure 2A and 2B from @ciriello12. The three first bars correspond to the altered genes from the Rb signalling pathway (Figure 2A of the paper) and the three below to the p53 pathway (Figure 2B)."}
 knitr::include_graphics("figures/ciriello_figure3.png")
 ```
 
 ### Case C: The problem simplified ## {#ciri12_c}
 
-We know the cases presented here can be hard to visualize at first glance. To make things clear about what is going on in cases A and B we have made up a model with three genes: A, B and C. A and B are mutually exclusive, B and C are also mutually exclusive but A and C are not mutually exclusive (e.g., A could be CDK4, B could be CDKN2A and C could be TP53). 
+We know the cases presented here can be hard to visualize at first glance. To make
+things clear about what is going on in cases A and B we have made up a model with
+three genes: A, B and C. A and B are mutually exclusive, B and C are also mutually
+exclusive but A and C are not mutually exclusive (i.e., A could be CDK4, B could
+be CDKN2A and C could be TP53). 
 
 Then we determine: 
 
-* The fitness of the individual clones to be the same (e.g fitness A = fitness B = fitness C = 2). 
+* The fitness of the individual clones to be the same (i.e., fitness A = fitness B = fitness C = 2). 
+
 * The combination of mutually exclusive mutations doesn't raise or lower the fitness (fitness A, B = fitness B, C).
+
 * The combination of non mutually exclusive mutations raises the fitness according to the multiplicative model (fitness A, C = 4).
 
-But now, what would be the fitness of an A, B, C clone? It is impossible given the geometrical constrains imposed by the mutual exclusion restrictions. This means that:
+But now, what would be the fitness of an A, B, C clone? It is impossible given
+the geometrical constrains imposed by the mutual exclusion restrictions. This means that:
 
-* If we set the fitness of the A, B, C genotype on 4, considering that mutating B in a A, C clone doesn't modify its fitness, we would find that paths from A, B and B, C to A, B, C break the mutual exclusivity (because we observe an increment in fitness)
-* If we set the fitness of the A, B, C genotype on 2, considering that mutating A in B, C or mutating C in A, B don't modify their fitness, we would find that the path from A, C to A, B, C necessarily involves a decrease in fitness. 
-* Alternatively specifying fitness taking into account order of mutations would prevent facing these problems, but we need to find a biological explanation that justifies that a A > B > C clone presents a different fitness than A > C > B, B > A > C, C > B > A or B > C > A clones.
+* If we set the fitness of the A, B, C genotype on 4, considering that mutating B
+in a A, C clone doesn't modify its fitness, we would find that paths from A, B and
+B, C to A, B, C break the mutual exclusivity (because we observe an increment in fitness)
 
-We invite you to take a look at the fitness landscape, play with the genotypes and try to satisfy all the conditions explained above:
+* If we set the fitness of the A, B, C genotype on 2, considering that mutating A
+in B, C or mutating C in A, B don't modify their fitness, we would find that the
+path from A, C to A, B, C necessarily involves a decrease in fitness. 
 
-```{r}
+* Alternatively specifying fitness taking into account order of mutations would
+prevent facing these problems, but we need to find a biological explanation that
+justifies that a A > B > C clone presents a different fitness than A > C > B, B > A > C, C > B > A or B > C > A clones.
+
+We invite you to take a look at the fitness landscape, play with the genotypes
+and try to satisfy all the conditions explained above:
+
+```{r simpliflied_casec}
 three_g <- data.frame(Genotype = c("WT", "A", "B", "C",
                                    "A, B", "A, C", "B, C",
                                    "A, B, C"), 
@@ -795,6 +868,20 @@ three_g_eAG <- evalAllGenotypes(three_g_aFE, order = FALSE, addwt = TRUE)
 plot(three_g_eAG, use_ggrepel = TRUE)
 ```
 
-# Discussion
+# Summary
+Our work with the colorectal cancer model suggested by @cristea17 shows a model
+that can be easily implemented with `OncoSimulR`, as the number of genes and
+pathways involved is relatively small. Our different implementations seem very
+similar but their differences have strong effects on fitness, highlighting the
+importance of interpreting the models properly.
+
+In conclusion, `OncoSimulR` must face new challenges derived from the discovery
+of more complex models; some authors (@schill19) have argued that DAGs and
+Conjunctive Bayesian Networks (CBN) in general may not represent cancer progression
+with maximum accuracy since latest models break some of their assumptions. Our
+work with glioblastoma and the results from @ciriello12 suggest that 
+models to perform simulations must accommodate new models that relax DAG
+constraints (i.e., allowing a gene to be present in more than one module) in
+order to simulate cancer progression properly. 
 
 # References
