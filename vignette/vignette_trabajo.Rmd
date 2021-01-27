@@ -54,7 +54,7 @@ genes in relevant pathways that could be used to block that tumor progression).
 These CPMS return directed acyclic graphs **(DAGs)** in which the vertices or nodes
 are the potentially mutated genes, and their relationships are the
 edges of the graph (arrows representing temporal order of mutations);
-therefore delimiting the possible genotypes that can occur in that tumor as
+therefore delimiting the possible mutational trajectories that can occur in that tumor as
 they must fulfill whats restricted within the DAGs (@uriarte19).  
 
 Another convenient approach to understand cancer progression are **fitness landscapes**,
@@ -152,8 +152,7 @@ Now we could obtain the fitness landscape for this model, but the result is a
 very busy plot:
 
 ```{r path_ex1_fig3a_FitLandscape}
-# We could obtain the fitness for each genotype combination, 
-# but it results in very busy plots as there are many combinations:
+# Busy plots as there are many combinations:
 eAG_wood_root <- evalAllGenotypes(wood_root)
 
 plot(eAG_wood_root)  # Overlapping labels
@@ -180,9 +179,6 @@ simul_wood_root <- oncoSimulIndiv(wood_root,
                               errorHitMaxTries = FALSE,
                               errorHitWallTime = FALSE
                               )
-
-# Since plotting genotypes results in a very busy plot,
-# we will only plot the number of drivers:
 
 # xlim = c(0, 5000) shows full time-lapse for comparison of 
 # clones with five vs. six mutated drivers
@@ -455,7 +451,7 @@ ex4 # Fitness of 0.01 = 0.1 * 0.1
 ex5 <- eAG_wood_order[grep("^PIK3CA > TP53$", eAG_wood_order[,1]),]  
 
     # 1 --> There is no positive (or negative) effect on fitness
-    # relative to the wild type
+    #       relative to the wild type
 ex5
 
 ex6 <- eAG_wood_order[grep("^TP53 > PIK3CA$", eAG_wood_order[,1]),]   
@@ -869,18 +865,24 @@ plot(three_g_eAG, use_ggrepel = TRUE)
 ```
 
 # Summary
-Our work with the colorectal cancer model suggested by @cristea17 shows a model
-that can be easily implemented with `OncoSimulR`, as the number of genes and
-pathways involved is relatively small. Our different implementations seem very
-similar but their differences have strong effects on fitness, highlighting the
-importance of interpreting the models properly.
+The colorectal cancer model suggested by @cristea17 is an 
+example of a model that can be easily implemented with `OncoSimulR`, as the number
+of genes and pathways involved is relatively small. The different implementations
+reported here might seem very similar, but their differences have strong effects
+on fitness, highlighting the importance of interpreting the models properly. 
+
+This is especially important for more complex models of tumor progression, where
+situations that are more challenging to translate into code might be encountered.
+This was the case for the glioblastoma models from @ciriello12, where we
+showed some of the obstacles that can appear when tumorigenesis follows a more
+intricate path.
 
 In conclusion, `OncoSimulR` must face new challenges derived from the discovery
 of more complex models; some authors (@schill19) have argued that DAGs and
 Conjunctive Bayesian Networks (CBN) in general may not represent cancer progression
 with maximum accuracy since latest models break some of their assumptions. Our
 work with glioblastoma and the results from @ciriello12 suggest that 
-models to perform simulations must accommodate new models that relax DAG
+models to perform simulations must accommodate new approaches that relax DAG
 constraints (i.e., allowing a gene to be present in more than one module) in
 order to simulate cancer progression properly. 
 
